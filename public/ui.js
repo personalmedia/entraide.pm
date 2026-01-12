@@ -213,66 +213,71 @@ class UIManager {
             const balance = this.storage.calculateBalance(account);
             const isOwed = balance > 0;
             const statusColor = balance > 0 ? 'text-red-600' : balance < 0 ? 'text-yellow-600' : 'text-green-600';
-            const statusText = balance > 0 ? 'Vous doit' : balance < 0 ? 'Vous devez' : 'Équilibre';
+            const statusText = balance > 0 ? 'vous doit' : balance < 0 ? 'Vous devez' : 'Équilibre';
             const lastTransaction = account.transactions[account.transactions.length - 1];
 
             return `
-                <div class="bg-white rounded-lg shadow-sm border border-gray-200">
+                <div class="bg-white rounded-lg border border-gray-200 shadow-sm">
                     <div class="p-4 cursor-pointer" onclick="ui.toggleLendingDetails('${account.id}')">
-                        <div class="flex items-center justify-between">
+                        <div class="flex justify-between items-center">
                             <div class="flex-1">
-                                <div class="flex items-center justify-between mb-1">
-                                    <h3 class="font-medium text-gray-900">${account.party}</h3>
+                                <div class="flex justify-between items-center">
+                                    <div class="font-medium text-gray-900 text-md">
+                                        ${account.party}
+                                        <div>
+                                            <span class="text-xs uppercase font-bold rounded-full ${isOwed ? 'text-red-600' : balance < 0 ? 'text-orange-400' : 'text-green-600'}">
+                                                ${statusText}
+                                            </span>
+                                        </div>
+                                    </div>
                                     <span id="chevron-${account.id}" class="text-gray-400 transition-transform">▼</span>
                                 </div>
-                                <div class="flex items-center justify-between text-sm">
-                                    <span class="text-gray-500">${lastTransaction ? this.formatDate(lastTransaction.date) : ''}</span>
-                                    <span class="${statusColor} font-medium">
-                                        ${balance !== 0 ? this.formatCurrency(Math.abs(balance)) : statusText}
-                                    </span>
-                                </div>
-                                <div class="mt-1">
-                                    <span class="text-xs px-2 py-1 rounded-full ${isOwed ? 'bg-red-100 text-red-700' : balance < 0 ? 'bg-yellow-100 text-yellow-700' : 'bg-green-100 text-green-700'}">
-                                        ${statusText}
-                                    </span>
+                                <div class="flex justify-between items-center text-md">
+                                    <span class="font-bold ${isOwed ? 'text-red-600' : balance < 0 ? 'text-orange-400' : 'text-green-600'}"> ${balance !== 0 ? this.formatCurrency(Math.abs(balance)) : statusText} </span>
+                                    <span class="text-sm text-gray-500">${lastTransaction ? this.formatDate(lastTransaction.date) : ''}</span>
+                                    <div class="text-right ${statusColor} font-medium">
+                                        <div class="mt-1">
+                                            <button onclick="ui.shareAccount('${account.id}')" class="px-3 py-1 text-xs text-white bg-black rounded-full transition-colors hover:bg-purple-700">Partager</button>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
                     
-                    <div id="details-${account.id}" class="border-t border-gray-100 hidden">
+                    <div id="details-${account.id}" class="hidden border-t border-gray-100">
                         <div class="p-4">
-                            <div class="flex items-center justify-between mb-3">
+                            <div class="flex justify-between items-center mb-3">
                                 <h4 class="font-medium text-gray-700">Historique</h4>
                                 <div class="flex gap-2">
-                                    <button onclick="ui.showAddLendingModal('${account.party}')" class="text-xs px-3 py-1 bg-blue-600 text-white rounded-full hover:bg-blue-700 transition-colors">+ Nouvelle transaction</button>
-                                    ${balance !== 0 ? `<button onclick="ui.showPaymentModal('${account.id}')" class="text-xs px-3 py-1 bg-green-600 text-white rounded-full hover:bg-green-700 transition-colors">+ Paiement</button>` : ''}
+                                    <button onclick="ui.showAddLendingModal('${account.party}')" class="px-3 py-1 text-xs text-white bg-blue-600 rounded-full transition-colors hover:bg-blue-700">+ Nouvelle transaction</button>
+                                    ${balance !== 0 ? `<button onclick="ui.showPaymentModal('${account.id}')" class="px-3 py-1 text-xs text-white bg-green-600 rounded-full transition-colors hover:bg-green-700">+ Paiement</button>` : ''}
                                 </div>
                             </div>
                             
                             ${account.transactions.length === 0 ? 
-                                '<p class="text-gray-500 text-sm italic">Aucune transaction encore</p>' :
+                                '<p class="text-sm italic text-gray-500">Aucune transaction encore</p>' :
                                 `<div class="space-y-2">
                                     ${account.transactions.slice().reverse().map(transaction => {
                                         const isPositive = transaction.amount > 0;
                                         const typeLabel = transaction.type === 'payment' ? 'Paiement' : 
                                                         transaction.type === 'lent' ? 'Prêt' : 'Emprunt';
                                         return `
-                                        <div class="flex items-center justify-between py-2 px-3 bg-gray-50 rounded">
+                                        <div class="flex justify-between items-center px-3 py-2 bg-gray-50 rounded">
                                             <div>
                                                 <span class="text-sm font-medium ${isPositive ? 'text-green-600' : 'text-red-600'}">${isPositive ? '+' : ''}${this.formatCurrency(transaction.amount)}</span>
-                                                <span class="text-xs text-gray-500 ml-2">${typeLabel} • ${this.formatDate(transaction.date)}</span>
+                                                <span class="ml-2 text-xs text-gray-500">${typeLabel} • ${this.formatDate(transaction.date)}</span>
                                             </div>
-                                            <button onclick="ui.deleteTransaction('${account.id}', '${transaction.id}')" class="text-red-500 hover:text-red-700 text-xs">Supprimer</button>
+                                            <button onclick="ui.deleteTransaction('${account.id}', '${transaction.id}')" class="text-xs text-red-500 hover:text-red-700">Supprimer</button>
                                         </div>
                                     `;
                                     }).join('')}
                                 </div>`
                             }
                             
-                            <div class="mt-3 pt-3 border-t border-gray-200 flex justify-between items-center">
+                            <div class="flex justify-between items-center pt-3 mt-3 border-t border-gray-200">
                                 <span class="text-sm text-gray-600">Solde : <span class="font-medium ${statusColor}">${balance !== 0 ? this.formatCurrency(balance) : '0 -'}</span></span>
-                                <button onclick="ui.deleteAccount('${account.id}')" class="text-red-500 hover:text-red-700 text-xs">Supprimer le compte</button>
+                                <button onclick="ui.deleteAccount('${account.id}')" class="text-xs text-red-500 hover:text-red-700">Supprimer le compte</button>
                             </div>
                         </div>
                     </div>
@@ -294,4 +299,28 @@ class UIManager {
             this.render();
         }
     }
+
+    async shareAccount(accountId) {
+        const accounts = this.storage.getAccounts();
+        const account = accounts.find(a => a.id === accountId);
+        if (!account) return;
+
+        // 1. On transforme en chaîne de caractères
+        const dataStr = JSON.stringify(account);
+        
+        // 2. On compresse en format compatible URL (Base64 sécurisé)
+        const compressed = LZString.compressToEncodedURIComponent(dataStr);
+        
+        // 3. On crée l'URL complète
+        const shareUrl = `${window.location.origin}${window.location.pathname}#share:${compressed}`;
+        
+        // 4. On copie dans le presse-papier
+        try {
+            await navigator.clipboard.writeText(shareUrl);
+            alert("Lien de partage copié ! Envoyez-le à votre ami.");
+        } catch (err) {
+            console.error('Erreur de copie:', err);
+        }
+    }
+
 }

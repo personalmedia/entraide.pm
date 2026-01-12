@@ -25,6 +25,35 @@ if ('serviceWorker' in navigator) {
             .catch(registrationError => {
                 console.log('SW registration failed: ', registrationError);
             });
+
+            const hash = window.location.hash;
+            if (hash.startsWith('#share:')) {
+                const compressedData = hash.replace('#share:', '');
+                try {
+                    const decompressed = LZString.decompressFromEncodedURIComponent(compressedData);
+                    const sharedAccount = JSON.parse(decompressed);
+        
+                    if (confirm(`Voulez-vous importer le compte de "${sharedAccount.party}" partagé via le lien ?`)) {
+                        // On importe en utilisant une logique similaire à l'import de fichier
+                        const currentAccounts = storage.getAccounts();
+                        // On vérifie si on met à jour ou si on ajoute
+                        const index = currentAccounts.findIndex(a => a.party.toLowerCase() === sharedAccount.party.toLowerCase());
+                        
+                        if (index !== -1) {
+                            currentAccounts[index] = sharedAccount;
+                        } else {
+                            currentAccounts.push(sharedAccount);
+                        }
+                        
+                        storage.saveAccounts(currentAccounts);
+                        ui.render();
+                        // On nettoie l'URL
+                        window.location.hash = '';
+                    }
+                } catch (e) {
+                    console.error("Erreur de lecture du lien de partage", e);
+                }
+            }
     });
 }
 
